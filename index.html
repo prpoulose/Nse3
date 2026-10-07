@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NSE F&O Live Dashboard</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0b1220;
+      color: white;
+    }
+
+    .container {
+      max-width: 1500px;
+      margin: auto;
+      padding: 15px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .title {
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .subtitle {
+      color: #9aa7bb;
+      font-size: 13px;
+      margin-top: 5px;
+    }
+
+    .live {
+      background: #142238;
+      border: 1px solid #263a57;
+      padding: 10px 15px;
+      border-radius: 8px;
+    }
+
+    .live-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      background: #22c55e;
+      border-radius: 50%;
+      margin-right: 7px;
+    }
+
+    .controls,
+    .summary,
+    .card,
+    .news,
+    .conclusion {
+      background: #111b2e;
+      border: 1px solid #263a57;
+      border-radius: 12px;
+    }
+
+    .controls {
+      padding: 15px;
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      color: #9aa7bb;
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 11px;
+      border-radius: 7px;
+      border: 1px solid #334863;
+      background: #0b1424;
+      color: white;
+    }
+
+    button {
+      align-self: end;
+      padding: 11px 20px;
+      border: none;
+      border-radius: 7px;
+      background: #1677ff;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .summary {
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .symbol {
+      font-size: 23px;
+      font-weight: bold;
+    }
+
+    .price {
+      font-size: 31px;
+      font-weight: bold;
+      margin: 5px 0;
+    }
+
+    .up {
+      color: #22c55e;
+    }
+
+    .down {
+      color: #ef4444;
+    }
+
+    .badge {
+      background: #18304d;
+      color: #72b5ff;
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-weight: bold;
+    }
+
+    .section-title {
+      font-size: 19px;
+      font-weight: bold;
+      margin: 18px 0 10px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .card {
+      padding: 17px;
+      min-height: 160px;
+    }
+
+    .number {
+      color: #73839a;
+      font-size: 11px;
+      margin-bottom: 5px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: bold;
+      margin-bottom: 14px;
+    }
+
+    .big {
+      font-size: 25px;
+      font-weight: bold;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 9px;
+      font-size: 13px;
+    }
+
+    .row span:first-child {
+      color: #9aa7bb;
+    }
+
+    .small {
+      margin-top: 8px;
+      color: #9aa7bb;
+      font-size: 12px;
+    }
+
+    .news {
+      padding: 17px;
+    }
+
+    .news-item {
+      padding: 12px 0;
+      border-bottom: 1px solid #263a57;
+    }
+
+    .news-item:last-child {
+      border-bottom: none;
+    }
+
+    .news-title {
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .news-effect {
+      color: #9aa7bb;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    .conclusion {
+      margin-top: 18px;
+      padding: 20px;
+    }
+
+    .conclusion-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .conclusion-title {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .signal {
+      font-size: 21px;
+      font-weight: bold;
+      color: #22c55e;
+    }
+
+    .reason {
+      margin-top: 12px;
+      color: #c4cedc;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .demo {
+      color: #74839a;
+      font-size: 11px;
+      margin-top: 13px;
+    }
+
+    footer {
+      text-align: center;
+      color: #68778e;
+      font-size: 11px;
+      padding: 25px 0 10px;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .controls {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .title {
+        font-size: 22px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <div>
+      <div class="title">NSE F&O Live Dashboard</div>
+      <div class="subtitle">NSE • Futures & Options • 7-Parameter Analysis</div>
+    </div>
+
+    <div class="live">
+      <span class="live-dot"></span>
+      LIVE
+    </div>
+  </div>
+
+  <div class="controls">
+
+    <div>
+      <label>Market</label>
+      <select>
+        <option>NSE</option>
+      </select>
+    </div>
+
+    <div>
+      <label>F&O Stock</label>
+      <input id="stock" value="RELIANCE">
+    </div>
+
+    <button onclick="analyze()">ANALYZE</button>
+
+  </div>
+
+  <div class="summary">
+
+    <div class="summary-row">
+
+      <div>
+        <div class="symbol" id="symbol">RELIANCE</div>
+        <div class="price">₹1,485.20</div>
+        <div class="up">+18.40 (+1.25%)</div>
+      </div>
+
+      <div class="badge">NSE F&O</div>
+
+    </div>
+
+  </div>
+
+  <div class="section-title">7-Parameter Analysis</div>
+
+  <div class="grid">
+
+    <div class="card">
+      <div class="number">PARAMETER 1</div>
+      <div class="card-title">Open Interest</div>
+
+      <div class="big up">+8.42%</div>
+
+      <div class="row">
+        <span>Current OI</span>
+        <span>12.84 Cr</span>
+      </div>
+
+      <div class="row">
+        <span>OI Change</span>
+        <span class="up">+8.42%</span>
+      </div>
+
+      <div class="small">
+        Rising OI with rising price may indicate long buildup.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="number">PARAMETER 2</div>
+      <div class="card-title">Volume + 5-Day Average</div>
+
+      <div class="big up">1.62 ×</div>
+
+      <div class="row">
+        <span>Current Volume</span>
+        <span>2.84 Cr</span>
+      </div>
+
+      <div class="row">
+        <span>5-Day Avg Volume</span>
+        <span>1.75 Cr</span>
+      </div>
+
+      <div class="small">
+        Current volume is above the 5-day average.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="number">PARAMETER 3</div>
+      <div class="card-title">Today's Price Up / Down</div>
+
+      <div class="big up">+1.25%</div>
+
+      <div class="row">
+        <span>Open</span>
+        <span>₹1,468.00</span>
+      </div>
+
+      <div class="row">
+        <span>Current</span>
+        <span>₹1,485.20</span>
+      </div>
+
+      <div class="small">
+        Today's direction: UP
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="number">PARAMETER 4</div>
+      <div class="card-title">5-Day Price + Delivery</div>
+
+      <div class="big up">+3.86%</div>
+
+      <div class="row">
+        <span>5-Day Result</span>
+        <span class="up">UP</span>
+      </div>
+
+      <div class="row">
+        <span>Delivery</span>
+        <span>58.40%</span>
+      </div>
+
+      <div class="small">
+        Delivery is considered together with price movement.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="number">PARAMETER 5</div>
+      <div class="card-title">10-Day Support / Resistance</div>
+
+      <div class="row">
+        <span>Support</span>
+        <span>₹1,442</span>
+      </div>
+
+      <div class="row">
+        <span>Current</span>
+        <span>₹1,485</span>
+      </div>
+
+      <div class="row">
+        <span>Resistance</span>
+        <span>₹1,510</span>
+      </div>
+
+      <div class="small">
+        Current price is above support.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="number">PARAMETER 6</div>
+      <div class="card-title">Important News + Effect</div>
+
+      <div class="big up">POSITIVE</div>
+
+      <div class="small">
+        The most important relevant news will be analysed for positive,
+        negative or neutral effect.
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section-title">Important News Analysis</div>
+
+  <div class="news">
+
+    <div class="news-item">
+      <div class="news-title">
+        Example company / sector news
+      </div>
+
+      <div class="news-effect">
+        Effect: Potentially positive. Confirmation required from price,
+        OI and volume.
+      </div>
+    </div>
+
+    <div class="news-item">
+      <div class="news-title">
+        Example market announcement
+      </div>
+
+      <div class="news-effect">
+        Effect: Monitor for bullish or bearish impact.
+      </div>
+    </div>
+
+  </div>
+
+  <div class="conclusion">
+
+    <div class="conclusion-top">
+
+      <div class="conclusion-title">
+        PARAMETER 7 — RESULT & CONCLUSION
+      </div>
+
+      <div class="signal">BULLISH</div>
+
+    </div>
+
+    <div class="reason">
+      OI is increasing, volume is above the 5-day average,
+      today's price is positive, the 5-day result is positive,
+      delivery is healthy, and price is above the 10-day support.
+      News effect is currently positive. Combined analysis indicates
+      a bullish setup.
+    </div>
+
+    <div class="demo">
+      DEMO DATA — LIVE NSE DATA CONNECTION WILL BE ADDED AFTER THE
+      WEBSITE IS WORKING.
+    </div>
+
+  </div>
+
+  <footer>
+    NSE F&O Live Analysis Dashboard
+  </footer>
+
+</div>
+
+<script>
+  function analyze() {
+
+    const stock = document
+      .getElementById("stock")
+      .value
+      .trim()
+      .toUpperCase();
+
+    if (!stock) {
+      alert("Please enter an NSE F&O stock symbol.");
+      return;
+    }
+
+    document.getElementById("symbol").innerText = stock;
+  }
+</script>
+
+</body>
+</html>
