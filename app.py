@@ -120,7 +120,6 @@ def angel_status():
         "order_placement": "DISABLED",
     }
 
- 
 
 @app.get("/api/angel/test-login")
 def angel_test_login(
@@ -153,6 +152,7 @@ def angel_test_login(
 
     try:
         smart_api = SmartConnect(api_key=api_key)
+
         totp_code = pyotp.TOTP(totp_secret).now()
 
         session = smart_api.generateSession(
@@ -181,13 +181,19 @@ def angel_test_login(
     except HTTPException:
         raise
 
-    except Exception:
+    except Exception as exc:
+        error_type = type(exc).__name__
+
         raise HTTPException(
             status_code=502,
-            detail=(
-                "Angel One authentication could not be completed. "
-                "Check Render logs without sharing credentials."
-            ),
+            detail={
+                "message": "Angel One authentication failed.",
+                "error_type": error_type,
+                "hint": (
+                    "Check the Angel One credentials, TOTP, "
+                    "network connectivity, and SmartAPI response."
+                ),
+            },
         )
 
     finally:
@@ -196,4 +202,3 @@ def angel_test_login(
                 smart_api.terminateSession(client_id)
             except Exception:
                 pass
-
