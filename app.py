@@ -212,8 +212,8 @@ def angel_test_login(
         )
 
     finally:
-        if smart_api is not None:
-            try:
-                smart_api.terminateSession(client_id)
-            except Exception:
-                pass
+      
+    finally:
+        # Do not call logout unless a session was established.
+        pass
+
