@@ -210,7 +210,10 @@ def scan():
         detail=(
             "Scanner is not ready: live market-data integration has not been configured. "
             "No symbols were scanned and no trade signals were generated."
-            
+        ),
+    )
+
+
 @app.get("/api/angel/status")
 def angel_status():
     required = [
@@ -219,16 +222,20 @@ def angel_status():
         "ANGEL_MPIN",
         "ANGEL_TOTP_SECRET",
     ]
-    missing = [name for name in required if not os.getenv(name)]
+    missing = [
+        name for name in required
+        if not os.getenv(name)
+    ]
 
     return {
         "service": APP_NAME,
-        "angel_environment": "MISSING_SETTINGS" if missing else "SETTINGS_PRESENT",
+        "angel_environment": (
+            "MISSING_SETTINGS" if missing
+            else "SETTINGS_PRESENT"
+        ),
         "missing_settings": missing,
         "authentication_test": "NOT_RUN",
         "market_data": "NOT_CONNECTED",
         "order_placement": "DISABLED",
     }
 
-        ),
-    )
