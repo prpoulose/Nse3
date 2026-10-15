@@ -121,6 +121,7 @@ def angel_status():
     }
 
  
+
 @app.get("/api/angel/test-login")
 def angel_test_login(
     x_angel_test_key: str | None = Header(default=None),
@@ -137,12 +138,62 @@ def angel_test_login(
             detail="Forbidden",
         )
 
-    return {
-        "service": APP_NAME,
-        "security_check": "SUCCESS",
-        "authentication_test": "NOT_RUN",
-        "market_data": "NOT_CONNECTED",
-        "order_placement": "DISABLED",
-    }
+    api_key = os.getenv("ANGEL_API_KEY")
+    client_id = os.getenv("ANGEL_CLIENT_ID")
+    mpin = os.getenv("ANGEL_MPIN")
+    totp_secret = os.getenv("ANGEL_TOTP_SECRET")
 
- 
+    if not all([api_key, client_id, mpin, totp_secret]):
+        raise HTTPException(
+            status_code=503,
+            detail="Angel One settings are missing in Render.",
+        )
+
+    smart_api = None
+
+    try:
+        smart_api = SmartConnect(api_key=api_key)
+        totp_code = pyotp.TOTP(totp_secret).now()
+
+        session = smart_api.generateSession(
+            client_id,
+            mpin,
+            totp_code,
+        )
+
+        if not session or not session.get("status"):
+            raise HTTPException(
+                status_code=401,
+                detail=(
+                    "Angel One authentication failed. "
+                    "Check credentials and TOTP settings."
+                ),
+            )
+
+        return {
+            "service": APP_NAME,
+            "security_check": "SUCCESS",
+            "authentication_test": "SUCCESS",
+            "market_data": "NOT_CONNECTED",
+            "order_placement": "DISABLED",
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception:
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "Angel One authentication could not be completed. "
+                "Check Render logs without sharing credentials."
+            ),
+        )
+
+    finally:
+        if smart_api is not None:
+            try:
+                smart_api.terminateSession(client_id)
+            except Exception:
+                pass
+
