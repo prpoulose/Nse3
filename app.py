@@ -152,7 +152,6 @@ def angel_test_login(
 
     try:
         smart_api = SmartConnect(api_key=api_key)
-
         totp_code = pyotp.TOTP(totp_secret).now()
 
         session = smart_api.generateSession(
@@ -162,12 +161,28 @@ def angel_test_login(
         )
 
         if not session or not session.get("status"):
+            response_status = (
+                session.get("status")
+                if isinstance(session, dict)
+                else None
+            )
+            response_code = (
+                session.get("errorcode")
+                if isinstance(session, dict)
+                else None
+            )
+
             raise HTTPException(
                 status_code=401,
-                detail=(
-                    "Angel One authentication failed. "
-                    "Check credentials and TOTP settings."
-                ),
+                detail={
+                    "message": "Angel One rejected the login.",
+                    "response_status": response_status,
+                    "response_code": response_code,
+                    "hint": (
+                        "Check the Angel One login settings "
+                        "and TOTP configuration."
+                    ),
+                },
             )
 
         return {
