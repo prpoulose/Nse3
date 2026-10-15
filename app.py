@@ -2,7 +2,8 @@ import os
 from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-
+import pyotp
+from SmartApi import SmartConnect
 APP_NAME = "PRIME FLOW Backend"
 
 app = FastAPI(
