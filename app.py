@@ -211,9 +211,5 @@ def angel_test_login(
             },
         )
 
-    finally:
-      
-    finally:
-        # Do not call logout unless a session was established.
+  finally:
         pass
-
