@@ -2,3 +2,4 @@ fastapi
 uvicorn[standard]
 smartapi-python
 pyotp
+logzero
