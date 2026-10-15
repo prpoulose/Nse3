@@ -2,7 +2,10 @@
 import os
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, HTTPException
+import pyotp
+from SmartApi import SmartConnect
+
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 
 APP_NAME = "PRIME FLOW Backend"
@@ -116,5 +119,30 @@ def angel_status():
         "market_data": "NOT_CONNECTED",
         "order_placement": "DISABLED",
     }
-    import pyotp
-from SmartApi import SmartConnect
+
+ 
+@app.get("/api/angel/test-login")
+def angel_test_login(
+    x_angel_test_key: str | None = Header(default=None),
+):
+    expected_key = os.getenv("ANGEL_TEST_KEY")
+
+    if (
+        not expected_key
+        or not x_angel_test_key
+        or x_angel_test_key != expected_key
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden",
+        )
+
+    return {
+        "service": APP_NAME,
+        "security_check": "SUCCESS",
+        "authentication_test": "NOT_RUN",
+        "market_data": "NOT_CONNECTED",
+        "order_placement": "DISABLED",
+    }
+
+ 
