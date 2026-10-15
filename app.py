@@ -116,3 +116,5 @@ def angel_status():
         "market_data": "NOT_CONNECTED",
         "order_placement": "DISABLED",
     }
+    import pyotp
+from SmartApi import SmartConnect
