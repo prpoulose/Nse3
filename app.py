@@ -11,7 +11,7 @@ DHAN_BASE_URL = "https://api.dhan.co/v2"
 
 app = FastAPI(
     title=APP_NAME,
-    version="0.3.0",
+    version="0.4.0",
     description="PRIME FLOW NSE F&O scanner backend",
 )
 
@@ -38,8 +38,8 @@ def utc_now():
 
 
 def dhan_credentials():
-    client_id = os.getenv("DHAN_CLIENT_ID")
-    access_token = os.getenv("DHAN_ACCESS_TOKEN")
+    client_id = (os.getenv("DHAN_CLIENT_ID") or "").strip()
+    access_token = (os.getenv("DHAN_ACCESS_TOKEN") or "").strip()
 
     if not client_id or not access_token:
         raise HTTPException(
@@ -104,8 +104,12 @@ def api_status():
 def dhan_status():
     return {
         "service": APP_NAME,
-        "client_id_configured": bool(os.getenv("DHAN_CLIENT_ID")),
-        "access_token_configured": bool(os.getenv("DHAN_ACCESS_TOKEN")),
+        "client_id_configured": bool(
+            (os.getenv("DHAN_CLIENT_ID") or "").strip()
+        ),
+        "access_token_configured": bool(
+            (os.getenv("DHAN_ACCESS_TOKEN") or "").strip()
+        ),
         "authentication_test": "NOT_RUN",
         "market_data": "NOT_VERIFIED",
         "scanner": "NOT_IMPLEMENTED",
@@ -139,8 +143,8 @@ def dhan_test_connection():
             raise HTTPException(
                 status_code=401,
                 detail=(
-                    "Dhan did not accept the credentials. "
-                    "Check the client ID, token validity, and API access."
+                    "Dhan rejected the credentials. Check token validity "
+                    "and API access. No trade was placed."
                 ),
             )
 
@@ -160,7 +164,7 @@ def dhan_test_connection():
         raise
     except httpx.TimeoutException as exc:
         print(
-            f"Dhan request error: {type(exc).__name__}: {exc}",
+            f"Dhan connection timeout: {type(exc).__name__}",
             flush=True,
         )
         raise HTTPException(
@@ -168,8 +172,9 @@ def dhan_test_connection():
             detail="Dhan connection timed out. No trade was placed.",
         )
     except httpx.RequestError as exc:
+        # Never print the exception text; it may contain sensitive headers.
         print(
-            f"Dhan request error: {type(exc).__name__}: {exc}",
+            f"Dhan request failed: {type(exc).__name__}",
             flush=True,
         )
         raise HTTPException(
