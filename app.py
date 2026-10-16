@@ -121,7 +121,7 @@ def angel_status():
     }
 
 
-@app.get("/api/angel/test-login")
+@app.post("/api/angel/test-login")
 def angel_test_login(
     x_angel_test_key: str | None = Header(default=None),
 ):
@@ -148,8 +148,6 @@ def angel_test_login(
             detail="Angel One settings are missing in Render.",
         )
 
-    smart_api = None
-
     try:
         smart_api = SmartConnect(api_key=api_key)
         totp_code = pyotp.TOTP(totp_secret).now()
@@ -160,27 +158,14 @@ def angel_test_login(
             totp_code,
         )
 
-        if not session or not session.get("status"):
-            response_status = (
-                session.get("status")
-                if isinstance(session, dict)
-                else None
-            )
-            response_code = (
-                session.get("errorcode")
-                if isinstance(session, dict)
-                else None
-            )
-
+        if not isinstance(session, dict) or not session.get("status"):
             raise HTTPException(
                 status_code=401,
                 detail={
                     "message": "Angel One rejected the login.",
-                    "response_status": response_status,
-                    "response_code": response_code,
                     "hint": (
-                        "Check the Angel One login settings "
-                        "and TOTP configuration."
+                        "Check the Angel One credentials, "
+                        "TOTP configuration, and SmartAPI response."
                     ),
                 },
             )
@@ -197,19 +182,14 @@ def angel_test_login(
         raise
 
     except Exception as exc:
-        error_type = type(exc).__name__
-
         raise HTTPException(
             status_code=502,
             detail={
                 "message": "Angel One authentication failed.",
-                "error_type": error_type,
+                "error_type": type(exc).__name__,
                 "hint": (
                     "Check the Angel One credentials, TOTP, "
                     "network connectivity, and SmartAPI response."
                 ),
             },
         )
-
-  finally:
-        pass
