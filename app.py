@@ -147,12 +147,15 @@ def dhan_test_connection():
                 ),
             )
 
+         except httpx.RequestError as exc:
+        print(
+            f"Dhan request error: {type(exc).__name__}: {exc}",
+            flush=True,
+        )
         raise HTTPException(
             status_code=502,
-            detail=(
-                f"Dhan connection test returned HTTP "
-                f"{response.status_code}. No trade was placed."
-            ),
+            detail="Could not reach Dhan. No trade was placed.",
+        )
         )
 
     except HTTPException:
