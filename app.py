@@ -110,3 +110,50 @@ def scan():
             "No trades have been placed."
         ),
     )
+
+
+@app.get("/api/dhan/test-ltp")
+def test_dhan_ltp():
+    headers = dhan_credentials()
+
+    payload = {
+        "NSE_EQ": [1333],
+        "NSE_FNO": [],
+        "BSE_EQ": [],
+    }
+
+    try:
+        response = httpx.post(
+            "https://api.dhan.co/v2/marketfeed/ltp",
+            headers=headers,
+            json=payload,
+            timeout=15.0,
+        )
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    "Dhan LTP request failed with HTTP "
+                    f"{response.status_code}. Check market-data API access."
+                ),
+            )
+
+        data = response.json()
+
+        return {
+            "status": "success",
+            "message": "Dhan returned an LTP response.",
+            "data": data,
+            "order_placement": "disabled",
+        }
+
+    except httpx.RequestError as exc:
+        print(
+            f"Dhan LTP request failed: {type(exc).__name__}",
+            flush=True,
+        )
+        raise HTTPException(
+            status_code=502,
+            detail="Could not reach Dhan market-data API.",
+        )
