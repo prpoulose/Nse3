@@ -2,18 +2,17 @@
 import os
 from datetime import datetime, timezone
 
-import pyotp
-from SmartApi import SmartConnect
-
-from fastapi import FastAPI, HTTPException, Header
+import httpx
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 APP_NAME = "PRIME FLOW Backend"
+DHAN_BASE_URL = "https://api.dhan.co/v2"
 
 app = FastAPI(
     title=APP_NAME,
-    version="0.1.0",
-    description="PRIME FLOW NSE F&O dashboard backend",
+    version="0.2.0",
+    description="PRIME FLOW NSE F&O scanner backend",
 )
 
 _origins = os.getenv(
@@ -38,6 +37,23 @@ def utc_now():
     return datetime.now(timezone.utc).isoformat()
 
 
+def dhan_credentials():
+    client_id = os.getenv("DHAN_CLIENT_ID")
+    access_token = os.getenv("DHAN_ACCESS_TOKEN")
+
+    if not client_id or not access_token:
+        raise HTTPException(
+            status_code=503,
+            detail="Dhan credentials are missing in Render Environment.",
+        )
+
+    return {
+        "client-id": client_id,
+        "access-token": access_token,
+        "Content-Type": "application/json",
+    }
+
+
 @app.get("/")
 def root():
     return {
@@ -45,6 +61,7 @@ def root():
         "status": "running",
         "market_data": "NOT_CONNECTED",
         "utc_time": utc_now(),
+        "order_placement": "DISABLED",
     }
 
 
@@ -62,7 +79,7 @@ def api_status():
     return {
         "service": APP_NAME,
         "backend": "ONLINE",
-        "market_data": "NOT_CONNECTED",
+        "market_data": "NOT_VERIFIED",
         "scanner": "NOT_IMPLEMENTED",
         "order_placement": "DISABLED",
         "updated_at_utc": utc_now(),
@@ -77,10 +94,79 @@ def api_status():
             "08_buyer_seller_footprint": "NOT_CONNECTED",
             "09_high_volume_signal": "NOT_CONNECTED",
             "10_ema_and_rsi": "NOT_CONNECTED",
-            "11_data_status": "ONLINE_BACKEND_ONLY",
+            "11_data_status": "BACKEND_ONLINE",
             "12_global_market_and_events": "NOT_CONNECTED",
         },
     }
+
+
+@app.get("/api/dhan/status")
+def dhan_status():
+    has_client_id = bool(os.getenv("DHAN_CLIENT_ID"))
+    has_token = bool(os.getenv("DHAN_ACCESS_TOKEN"))
+
+    return {
+        "service": APP_NAME,
+        "client_id_configured": has_client_id,
+        "access_token_configured": has_token,
+        "authentication_test": "NOT_RUN",
+        "market_data": "NOT_VERIFIED",
+        "scanner": "NOT_IMPLEMENTED",
+        "order_placement": "DISABLED",
+    }
+
+
+@app.post("/api/dhan/test-connection")
+def dhan_test_connection():
+    headers = dhan_credentials()
+
+    try:
+        response = httpx.get(
+            f"{DHAN_BASE_URL}/profile",
+            headers=headers,
+            timeout=15.0,
+        )
+
+        if response.status_code == 200:
+            return {
+                "service": APP_NAME,
+                "authentication_test": "SUCCESS",
+                "message": "Dhan accepted the credentials.",
+                "market_data": "NOT_TESTED",
+                "scanner": "NOT_IMPLEMENTED",
+                "order_placement": "DISABLED",
+                "tested_at_utc": utc_now(),
+            }
+
+        if response.status_code in (401, 403):
+            raise HTTPException(
+                status_code=401,
+                detail=(
+                    "Dhan did not accept the credentials. "
+                    "Check the client ID, token validity, and API access."
+                ),
+            )
+
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                f"Dhan connection test returned HTTP "
+                f"{response.status_code}. No trade was placed."
+            ),
+        )
+
+    except HTTPException:
+        raise
+    except httpx.TimeoutException:
+        raise HTTPException(
+            status_code=504,
+            detail="Dhan connection timed out. No trade was placed.",
+        )
+    except httpx.RequestError:
+        raise HTTPException(
+            status_code=502,
+            detail="Could not reach Dhan. No trade was placed.",
+        )
 
 
 @app.post("/api/scan")
@@ -88,128 +174,8 @@ def scan():
     raise HTTPException(
         status_code=503,
         detail=(
-            "Scanner is not ready. Live market data is not connected. "
-            "No symbols were scanned and no trade signals were generated."
+            "Scanner is not ready. Market data and scanner logic "
+            "must be implemented and verified first. "
+            "No signals were generated and no trade was placed."
         ),
     )
-
-
-@app.get("/api/angel/status")
-def angel_status():
-    required = [
-        "ANGEL_API_KEY",
-        "ANGEL_CLIENT_ID",
-        "ANGEL_MPIN",
-        "ANGEL_TOTP_SECRET",
-    ]
-
-    missing = [
-        name for name in required
-        if not os.getenv(name)
-    ]
-
-    return {
-        "service": APP_NAME,
-        "angel_environment": (
-            "MISSING_SETTINGS" if missing
-            else "SETTINGS_PRESENT"
-        ),
-        "missing_settings": missing,
-        "authentication_test": "NOT_RUN",
-        "market_data": "NOT_CONNECTED",
-        "order_placement": "DISABLED",
-    }
-
-
-@app.post("/api/angel/test-login")
-def angel_test_login(
-    x_angel_test_key: str | None = Header(default=None),
-):
-    expected_key = os.getenv("ANGEL_TEST_KEY")
-
-    if (
-        not expected_key
-        or not x_angel_test_key
-        or x_angel_test_key != expected_key
-    ):
-        raise HTTPException(
-            status_code=403,
-            detail="Forbidden",
-        )
-
-    api_key = os.getenv("ANGEL_API_KEY")
-    client_id = os.getenv("ANGEL_CLIENT_ID")
-    mpin = os.getenv("ANGEL_MPIN")
-    totp_secret = os.getenv("ANGEL_TOTP_SECRET")
-
-    if not all([api_key, client_id, mpin, totp_secret]):
-        raise HTTPException(
-            status_code=503,
-            detail="Angel One settings are missing in Render.",
-        )
-
-    try:
-        smart_api = SmartConnect(api_key=api_key)
-        totp_code = pyotp.TOTP(totp_secret).now()
-
-        session = smart_api.generateSession(
-            client_id,
-            mpin,
-            totp_code,
-        )
-
-        if not isinstance(session, dict) or not session.get("status"):
-            raise HTTPException(
-                status_code=401,
-                detail={
-                    "message": "Angel One rejected the login.",
-                    "hint": (
-                        "Check the Angel One credentials, "
-                        "TOTP configuration, and SmartAPI response."
-                    ),
-                },
-            )
-
-        return {
-            "service": APP_NAME,
-            "security_check": "SUCCESS",
-            "authentication_test": "SUCCESS",
-            "market_data": "NOT_CONNECTED",
-            "order_placement": "DISABLED",
-        }
-
-    except HTTPException:
-        raise
-
-    
-    except Exception as exc:
-        error_type = type(exc).__name__
-        safe_message = str(exc)
-
-        # Avoid exposing credentials or authentication tokens.
-        for secret in [
-            api_key,
-            client_id,
-            mpin,
-            totp_secret,
-            expected_key,
-        ]:
-            if secret:
-                safe_message = safe_message.replace(secret, "[REDACTED]")
-
-        print(
-            f"Angel One login diagnostic: "
-            f"type={error_type}, message={safe_message[:300]}"
-        )
-
-        raise HTTPException(
-            status_code=502,
-            detail={
-                "message": "Angel One authentication failed.",
-                "error_type": error_type,
-                "hint": (
-                    "Check the Render logs for the sanitized "
-                    "login diagnostic."
-                ),
-            },
-        )
