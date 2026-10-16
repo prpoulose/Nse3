@@ -1,40 +1,9 @@
-
 import os
-from datetime import datetime, timezone
 
 import httpx
 from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 
-APP_NAME = "PRIME FLOW Backend"
-DHAN_BASE_URL = "https://api.dhan.co/v2"
-
-app = FastAPI(
-    title=APP_NAME,
-    version="0.4.0",
-    description="PRIME FLOW NSE F&O scanner backend",
-)
-
-_origins = os.getenv(
-    "ALLOWED_ORIGINS",
-    "https://prpoulose.github.io",
-).strip()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        origin.strip()
-        for origin in _origins.split(",")
-        if origin.strip()
-    ],
-    allow_credentials=False,
-    allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
-)
-
-
-def utc_now():
-    return datetime.now(timezone.utc).isoformat()
+app = FastAPI(title="PRIME FLOW", version="0.4.0")
 
 
 def dhan_credentials():
@@ -55,124 +24,73 @@ def dhan_credentials():
 
 
 @app.get("/")
-def root():
+def home():
     return {
-        "service": APP_NAME,
+        "application": "PRIME FLOW",
+        "version": "0.4.0",
         "status": "running",
-        "market_data": "NOT_CONNECTED",
-        "utc_time": utc_now(),
-        "order_placement": "DISABLED",
+        "trading": "order placement disabled",
     }
 
 
 @app.get("/health")
 def health():
-    return {
-        "ok": True,
-        "service": APP_NAME,
-        "utc_time": utc_now(),
-    }
+    return {"status": "healthy"}
 
 
 @app.get("/api/status")
 def api_status():
     return {
-        "service": APP_NAME,
-        "backend": "ONLINE",
-        "market_data": "NOT_VERIFIED",
-        "scanner": "NOT_IMPLEMENTED",
-        "order_placement": "DISABLED",
-        "updated_at_utc": utc_now(),
-        "parameters": {
-            "01_open_interest": "NOT_CONNECTED",
-            "02_volume_vs_5d_average": "NOT_CONNECTED",
-            "03_todays_price_movement": "NOT_CONNECTED",
-            "04_5d_price_and_delivery": "NOT_CONNECTED",
-            "05_10d_support_resistance": "NOT_CONNECTED",
-            "06_news_and_effect": "NOT_CONNECTED",
-            "07_overall_conclusion": "NOT_CONNECTED",
-            "08_buyer_seller_footprint": "NOT_CONNECTED",
-            "09_high_volume_signal": "NOT_CONNECTED",
-            "10_ema_and_rsi": "NOT_CONNECTED",
-            "11_data_status": "BACKEND_ONLINE",
-            "12_global_market_and_events": "NOT_CONNECTED",
-        },
+        "application": "PRIME FLOW",
+        "version": "0.4.0",
+        "backend": "running",
+        "order_placement": "disabled",
+        "scanner": "not yet implemented",
     }
 
 
 @app.get("/api/dhan/status")
 def dhan_status():
     return {
-        "service": APP_NAME,
         "client_id_configured": bool(
             (os.getenv("DHAN_CLIENT_ID") or "").strip()
         ),
         "access_token_configured": bool(
             (os.getenv("DHAN_ACCESS_TOKEN") or "").strip()
         ),
-        "authentication_test": "NOT_RUN",
-        "market_data": "NOT_VERIFIED",
-        "scanner": "NOT_IMPLEMENTED",
-        "order_placement": "DISABLED",
+        "connection_test": "not yet tested",
     }
 
 
 @app.post("/api/dhan/test-connection")
-def dhan_test_connection():
+def test_dhan_connection():
     headers = dhan_credentials()
 
     try:
         response = httpx.get(
-            f"{DHAN_BASE_URL}/profile",
+            "https://api.dhan.co/v2/profile",
             headers=headers,
             timeout=15.0,
         )
 
         if response.status_code == 200:
             return {
-                "service": APP_NAME,
-                "authentication_test": "SUCCESS",
-                "message": "Dhan accepted the credentials.",
-                "market_data": "NOT_TESTED",
-                "scanner": "NOT_IMPLEMENTED",
-                "order_placement": "DISABLED",
-                "tested_at_utc": utc_now(),
+                "status": "connected",
+                "message": "Dhan connection successful.",
+                "order_placement": "disabled",
             }
 
-        if response.status_code in (401, 403):
-            raise HTTPException(
-                status_code=401,
-                detail=(
-                    "Dhan rejected the credentials. Check token validity "
-                    "and API access. No trade was placed."
-                ),
-            )
-
-        print(
-            f"Dhan profile returned HTTP {response.status_code}.",
-            flush=True,
-        )
         raise HTTPException(
             status_code=502,
             detail=(
-                f"Dhan returned HTTP {response.status_code}. "
-                "No trade was placed."
+                "Dhan returned HTTP "
+                f"{response.status_code}. Check token validity "
+                "and API access in Dhan."
             ),
         )
 
-    except HTTPException:
-        raise
-    except httpx.TimeoutException as exc:
-        print(
-            f"Dhan connection timeout: {type(exc).__name__}",
-            flush=True,
-        )
-        raise HTTPException(
-            status_code=504,
-            detail="Dhan connection timed out. No trade was placed.",
-        )
     except httpx.RequestError as exc:
-        # Never print the exception text; it may contain sensitive headers.
+        # Never log exception text because it may expose sensitive headers.
         print(
             f"Dhan request failed: {type(exc).__name__}",
             flush=True,
@@ -183,13 +101,12 @@ def dhan_test_connection():
         )
 
 
-@app.post("/api/scan")
+@app.get("/api/scan")
 def scan():
     raise HTTPException(
         status_code=503,
         detail=(
-            "Scanner is not ready. Market data and scanner logic "
-            "must be implemented and verified first. "
-            "No signals were generated and no trade was placed."
+            "Scanner is not implemented yet. "
+            "No trades have been placed."
         ),
     )
