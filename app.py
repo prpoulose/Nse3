@@ -181,15 +181,35 @@ def angel_test_login(
     except HTTPException:
         raise
 
+    
     except Exception as exc:
+        error_type = type(exc).__name__
+        safe_message = str(exc)
+
+        # Avoid exposing credentials or authentication tokens.
+        for secret in [
+            api_key,
+            client_id,
+            mpin,
+            totp_secret,
+            expected_key,
+        ]:
+            if secret:
+                safe_message = safe_message.replace(secret, "[REDACTED]")
+
+        print(
+            f"Angel One login diagnostic: "
+            f"type={error_type}, message={safe_message[:300]}"
+        )
+
         raise HTTPException(
             status_code=502,
             detail={
                 "message": "Angel One authentication failed.",
-                "error_type": type(exc).__name__,
+                "error_type": error_type,
                 "hint": (
-                    "Check the Angel One credentials, TOTP, "
-                    "network connectivity, and SmartAPI response."
+                    "Check the Render logs for the sanitized "
+                    "login diagnostic."
                 ),
             },
         )
