@@ -11,7 +11,7 @@ DHAN_BASE_URL = "https://api.dhan.co/v2"
 
 app = FastAPI(
     title=APP_NAME,
-    version="0.2.0",
+    version="0.3.0",
     description="PRIME FLOW NSE F&O scanner backend",
 )
 
@@ -102,13 +102,10 @@ def api_status():
 
 @app.get("/api/dhan/status")
 def dhan_status():
-    has_client_id = bool(os.getenv("DHAN_CLIENT_ID"))
-    has_token = bool(os.getenv("DHAN_ACCESS_TOKEN"))
-
     return {
         "service": APP_NAME,
-        "client_id_configured": has_client_id,
-        "access_token_configured": has_token,
+        "client_id_configured": bool(os.getenv("DHAN_CLIENT_ID")),
+        "access_token_configured": bool(os.getenv("DHAN_ACCESS_TOKEN")),
         "authentication_test": "NOT_RUN",
         "market_data": "NOT_VERIFIED",
         "scanner": "NOT_IMPLEMENTED",
@@ -147,25 +144,34 @@ def dhan_test_connection():
                 ),
             )
 
-         except httpx.RequestError as exc:
+        print(
+            f"Dhan profile returned HTTP {response.status_code}.",
+            flush=True,
+        )
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                f"Dhan returned HTTP {response.status_code}. "
+                "No trade was placed."
+            ),
+        )
+
+    except HTTPException:
+        raise
+    except httpx.TimeoutException as exc:
         print(
             f"Dhan request error: {type(exc).__name__}: {exc}",
             flush=True,
         )
         raise HTTPException(
-            status_code=502,
-            detail="Could not reach Dhan. No trade was placed.",
-        )
-        )
-
-    except HTTPException:
-        raise
-    except httpx.TimeoutException:
-        raise HTTPException(
             status_code=504,
             detail="Dhan connection timed out. No trade was placed.",
         )
-    except httpx.RequestError:
+    except httpx.RequestError as exc:
+        print(
+            f"Dhan request error: {type(exc).__name__}: {exc}",
+            flush=True,
+        )
         raise HTTPException(
             status_code=502,
             detail="Could not reach Dhan. No trade was placed.",
