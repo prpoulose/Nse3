@@ -1,6 +1,3 @@
 fastapi
 uvicorn[standard]
-smartapi-python
-pyotp
-logzero
-websocket-client
+httpx
