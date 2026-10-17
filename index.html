@@ -3,220 +3,158 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PRIME FLOW | NSE F&O</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRIME FLOW | NSE F&O Scanner</title>
 <style>
-:root {
-  --bg:#080d18; --panel:#111a2b; --border:#27344b;
-  --text:#edf3ff; --muted:#9eacc4; --green:#25d695;
-  --red:#ff657a; --yellow:#ffc857; --blue:#65a8ff;
-}
+:root{color-scheme:dark;--bg:#0b1017;--panel:#131c27;--line:#283545;--text:#edf3fa;--muted:#91a0b3;--green:#35d49a;--red:#ff6878;--amber:#f3c66b}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);
-  font:14px Arial,sans-serif}
-header{padding:20px;border-bottom:1px solid var(--border);
-  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
-h1{margin:0;font-size:25px;letter-spacing:1px}
-h2{font-size:17px;margin:0 0 14px}
-h3{font-size:14px;margin:0 0 8px}
-p{color:var(--muted);line-height:1.5}
-small,.muted{color:var(--muted)}
-main{max-width:1450px;margin:auto;padding:16px}
-.panel{background:var(--panel);border:1px solid var(--border);
-  border-radius:12px;padding:16px;margin-bottom:14px}
-.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-.metric{background:#0b1322;border:1px solid var(--border);
-  padding:12px;border-radius:9px}
-.value{font-size:20px;font-weight:bold;margin:8px 0}
-.green{color:var(--green)} .red{color:var(--red)}
-.yellow{color:var(--yellow)} .blue{color:var(--blue)}
-.status{display:inline-block;border-radius:5px;padding:5px 8px;
-  font-size:11px;font-weight:bold;background:#343044;color:var(--yellow)}
-button,select,input{background:#0b1322;color:var(--text);
-  border:1px solid var(--border);border-radius:7px;padding:10px}
-button{cursor:pointer}
-button:hover{border-color:var(--blue)}
-input{width:100%;min-width:0}
-.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-.controls input{max-width:220px}
-table{width:100%;border-collapse:collapse;min-width:600px}
-th,td{text-align:left;padding:11px;border-bottom:1px solid var(--border)}
-th{color:var(--muted);font-size:12px}
+body{margin:0;background:var(--bg);color:var(--text);font:14px Arial,sans-serif}
+header{padding:18px 16px;background:#101823;border-bottom:1px solid var(--line)}
+.brand{font-size:24px;font-weight:800;letter-spacing:2px}
+.brand span{color:var(--green)}
+.sub{color:var(--muted);font-size:11px;letter-spacing:1.2px;margin-top:5px}
+.status{display:inline-block;margin-top:12px;padding:6px 10px;border:1px solid #725e35;border-radius:6px;color:var(--amber);font-size:11px;font-weight:bold}
+.notice{margin:14px 12px;padding:12px;border:1px solid #725e35;background:#211d14;border-radius:8px;color:#e9d7ad;line-height:1.5}
+main{padding:0 12px 24px;max-width:1400px;margin:auto}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.metric,.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.metric{padding:12px 10px;min-width:0}
+.metric small{display:block;color:var(--muted);font-size:10px}
+.metric strong{display:block;margin-top:8px;font-size:18px}
+.controls{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-bottom:14px}
+input,select,button{width:100%;min-width:0;padding:11px;background:#0c141e;color:var(--text);border:1px solid var(--line);border-radius:7px}
+button{background:#245b4b;color:#dffcf1;font-weight:bold;cursor:pointer}
+button:disabled{background:#29313c;color:#9ba6b4;cursor:not-allowed}
+.layout{display:grid;grid-template-columns:minmax(300px,0.9fr) minmax(0,1.5fr);gap:12px}
+.panel h2{font-size:15px;margin:0;padding:15px;border-bottom:1px solid var(--line)}
+.panel-body{padding:12px}
+.condition{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;padding:11px 0;border-bottom:1px solid #24303e}
+.condition:last-child{border-bottom:0}
+.condition b{font-size:12px;font-weight:600}
+.condition small{display:block;color:var(--muted);font-size:10px;margin-top:4px;line-height:1.4}
+.result{font-size:10px;color:var(--amber);border:1px solid #5a4d31;border-radius:5px;padding:5px 7px;white-space:nowrap}
+.final{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:8px;background:#0d151f}
+.final strong{color:var(--amber)}
+.final-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.final-grid small{display:block;color:var(--muted);font-size:10px}
+.final-grid b{display:block;margin-top:5px;font-size:13px}
 .table-wrap{overflow-x:auto}
-.note{font-size:12px;color:var(--muted)}
-.signal{border-left:3px solid var(--yellow)}
-footer{text-align:center;padding:20px;color:var(--muted)}
-@media(max-width:850px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:520px){.grid{grid-template-columns:1fr}
-header{padding:15px}main{padding:10px}.panel{padding:12px}}
+table{width:100%;border-collapse:collapse;min-width:420px}
+th,td{text-align:left;padding:12px 9px;border-bottom:1px solid var(--line);font-size:11px}
+th{color:var(--muted);font-weight:600}
+.empty{text-align:center;padding:30px 15px;color:var(--muted);line-height:1.7}
+.empty strong{display:block;color:var(--text);margin-bottom:8px}
+.foot{color:var(--muted);font-size:10px;padding:16px 2px;line-height:1.6}
+@media(max-width:760px){
+ header{padding:15px 12px}.brand{font-size:22px}
+ .layout{grid-template-columns:1fr}
+ .controls{grid-template-columns:1fr 1fr}
+ .controls input{grid-column:1/-1}
+ .metric{padding:10px 8px}.metric strong{font-size:16px}
+ .panel h2{padding:13px}
+}
 </style>
 </head>
 <body>
 <header>
-  <div>
-    <h1>PRIME FLOW</h1>
-    <p style="margin:6px 0 0">NSE Futures & Options Analysis Dashboard</p>
-  </div>
-  <div>
-    <span class="status" id="overallStatus">DEMO · NOT CONNECTED</span>
-    <p id="clock"></p>
-  </div>
+  <div class="brand">PRIME <span>FLOW</span></div>
+  <div class="sub">NSE F&O INTELLIGENCE SCANNER</div>
+  <div class="status">● OFFLINE — LIVE DATA NOT CONNECTED</div>
 </header>
 
+<div class="notice">
+  <b>Data connection required.</b> This dashboard is a user interface only.
+  Live market values and scan results are unavailable until a verified market-data
+  feed is connected. No stock signals or scores are fabricated.
+</div>
+
 <main>
-  <section class="panel">
-    <h2>Market Scanner</h2>
-    <label for="symbol">NSE symbol</label>
-    <div class="controls">
-      <input id="symbol" value="RELIANCE" placeholder="e.g. RELIANCE">
-      <button onclick="analyze()">Analyze</button>
-      <button onclick="refreshStatus()">Check Data Status</button>
-    </div>
-    <p class="note">This starter version uses no live market feed. Entering a symbol does not fetch live prices.</p>
+  <section class="metrics">
+    <div class="metric"><small>F&O UNIVERSE</small><strong>—</strong></div>
+    <div class="metric"><small>QUALIFIED STOCKS</small><strong>0</strong></div>
+    <div class="metric"><small>LAST UPDATE</small><strong>—</strong></div>
   </section>
 
-  <section class="panel">
-    <h2>Market Overview</h2>
-    <div class="metrics">
-      <div class="metric"><small>Selected Symbol</small><div class="value" id="selected">RELIANCE</div></div>
-      <div class="metric"><small>Live Price</small><div class="value">—</div><span class="status">NOT CONNECTED</span></div>
-      <div class="metric"><small>Market Direction</small><div class="value yellow">UNAVAILABLE</div></div>
-      <div class="metric"><small>Final Signal</small><div class="value yellow" id="finalSignal">WAIT</div></div>
-    </div>
+  <section class="controls">
+    <input id="search" type="search" placeholder="Search symbol (e.g. RELIANCE)" aria-label="Search stock symbol">
+    <select aria-label="Scan mode"><option>Auto Scan</option></select>
+    <select aria-label="Direction"><option>Both directions</option><option>Positive</option><option>Negative</option></select>
   </section>
+  <div style="margin:-5px 0 14px;color:var(--muted);font-size:11px">
+    Results limit: 25 stocks · Ranked by score when live data is available
+  </div>
 
-  <section class="panel">
-    <h2>Parameters 1–7 · Market Analysis</h2>
-    <div class="grid" id="marketParameters"></div>
-  </section>
+  <div class="layout">
+    <section class="panel">
+      <h2>13 CONDITIONS CHECK</h2>
+      <div class="panel-body" id="conditions"></div>
+      <div class="panel-body">
+        <div class="final">
+          <strong>FINAL CONCLUSION: WAIT</strong>
+          <div class="final-grid">
+            <div><small>Score</small><b>— / 100</b></div>
+            <div><small>Risk</small><b>Unknown</b></div>
+            <div><small>Entry</small><b>—</b></div>
+            <div><small>Stop loss / Target</small><b>— / —</b></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  <section class="panel">
-    <h2>Parameter 8 · Buyer/Seller Footprint</h2>
-    <p>Order-flow analysis by timeframe. True bid/ask trade classification requires a suitable trade-level data feed.</p>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Timeframe</th><th>Buy Volume</th><th>Sell Volume</th><th>Delta</th><th>Signal</th><th>Data Status</th></tr></thead>
-      <tbody id="footprintRows"></tbody>
-    </table></div>
-  </section>
+    <section class="panel">
+      <h2>AUTO SCAN RESULTS <span style="float:right;color:var(--muted);font-size:11px">TOP 25</span></h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>RANK</th><th>SYMBOL</th><th>SCORE</th><th>DIRECTION</th><th>RISK</th></tr></thead>
+          <tbody id="results"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="empty">
+        <strong>No qualifying results available</strong>
+        Live market data is not connected. The scanner will rank up to
+        25 qualifying stocks after data connection and validation.
+        <br><br>No invented prices, scores or trading recommendations.
+      </div>
+      <div class="panel-body">
+        <button id="scan" disabled>SCAN UNAVAILABLE — CONNECT DATA FIRST</button>
+      </div>
+    </section>
+  </div>
 
-  <section class="panel">
-    <h2>Parameter 9 · High Volume Signal</h2>
-    <div class="grid">
-      <div class="metric"><small>Current Volume</small><div class="value">—</div><span class="status">NOT CONNECTED</span></div>
-      <div class="metric"><small>Average Volume</small><div class="value">—</div><span class="status">NOT CONNECTED</span></div>
-      <div class="metric"><small>Volume Ratio</small><div class="value">—</div><span class="status">NOT CONNECTED</span></div>
-    </div>
-    <div class="grid" style="margin-top:12px">
-      <div class="metric signal"><h3 class="green">High Volume + Price Up</h3><p>Bullish watch after price confirmation.</p></div>
-      <div class="metric signal"><h3 class="red">High Volume + Price Down</h3><p>Bearish watch after price confirmation.</p></div>
-      <div class="metric signal"><h3 class="yellow">High Volume + Sideways</h3><p>Wait; investigate absorption or a potential breakout.</p></div>
-    </div>
-    <p class="note">Suggested starting thresholds: 1.5× rising volume, 2× high volume, 3× very high volume. Compare equivalent time intervals.</p>
-  </section>
-
-  <section class="panel">
-    <h2>Parameter 10 · EMA + RSI</h2>
-    <div class="metrics">
-      <div class="metric"><small>EMA 200</small><div class="value blue">—</div><span class="status">NO DATA</span></div>
-      <div class="metric"><small>EMA 50</small><div class="value blue">—</div><span class="status">NO DATA</span></div>
-      <div class="metric"><small>EMA 20</small><div class="value blue">—</div><span class="status">NO DATA</span></div>
-      <div class="metric"><small>EMA 10</small><div class="value blue">—</div><span class="status">NO DATA</span></div>
-    </div>
-    <div class="metric" style="margin-top:10px">
-      <small>RSI (14)</small><div class="value">—</div>
-      <p>Above 70: overbought zone · Above 50: stronger momentum · Below 50: weaker momentum · Below 30: oversold zone.</p>
-      <span class="status">WAITING FOR PRICE HISTORY</span>
-    </div>
-    <p class="note">Indicator values will be calculated only after price candles are connected.</p>
-  </section>
-
-  <section class="panel">
-    <h2>Parameter 11 · Live / Offline Data Status</h2>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Parameter</th><th>Required Data</th><th>Connection Status</th><th>Last Update</th></tr></thead>
-      <tbody id="statusRows"></tbody>
-    </table></div>
-    <p class="note">LIVE should only appear when a real feed is connected and fresh data has been received. DEMO is not live.</p>
-  </section>
-
-  <section class="panel">
-    <h2>Final Conclusion</h2>
-    <div class="metric">
-      <div class="value yellow">WAIT — DATA NOT CONNECTED</div>
-      <p>PRIME FLOW will not issue a market direction until the required data is available. Missing values are not treated as zero or guessed.</p>
-    </div>
-  </section>
+  <div class="foot">
+    PRIME FLOW · Analysis only · Automatic order placement disabled.<br>
+    Signals must pass data-quality checks before they can be displayed.
+  </div>
 </main>
-<footer>PRIME FLOW · Analysis support only · Not financial advice</footer>
 
 <script>
-const parameters = [
- ["1","Open Interest (OI)","Current OI, change and buildup"],
- ["2","Volume vs 5-Day Average","Current and average volume"],
- ["3","Today's Price Movement","Open, current price and daily change"],
- ["4","5-Day Price + Delivery","Price trend and delivery data"],
- ["5","10-Day Support / Resistance","Key price levels"],
- ["6","News + Market Impact","Relevant news and sentiment"],
- ["7","Result + Conclusion","Combined market direction"]
+const conditionNames = [
+  ["Data connection","Market feed availability and freshness"],
+  ["Global / event risk","Major events and market risk"],
+  ["India VIX","Volatility and risk environment"],
+  ["Today's price","Current price direction and change"],
+  ["Volume vs 5-day average","Relative trading activity"],
+  ["Open interest","Change in futures open interest"],
+  ["Buyer / seller footprint","Requires suitable trade-level data"],
+  ["High-volume signal","Volume expansion: 1.5×, 2× and 3× baseline"],
+  ["EMA + RSI","Trend and momentum confirmation"],
+  ["5-day price + delivery","Price performance and delivery data"],
+  ["10-day support / resistance","Nearby support and resistance levels"],
+  ["News + impact","Relevant news and potential impact"],
+  ["Final conclusion","Combined evidence-based assessment"]
 ];
-
-const requiredData = [
- ["1","OI and OI history"],["2","Intraday and historical volume"],
- ["3","Live price and open"],["4","5-day prices and delivery data"],
- ["5","10-day candle history"],["6","News feed"],
- ["7","Data from Parameters 1–6"],["8","Trade-level bid/ask order flow"],
- ["9","Current and historical volume"],["10","Price candles for EMA and RSI"],
- ["11","Health checks for every data source"]
-];
-
-function renderParameters(){
- document.getElementById("marketParameters").innerHTML = parameters.map(p => `
-  <div class="metric">
-   <small>PARAMETER ${p[0]}</small>
-   <h3>${p[1]}</h3>
-   <p>${p[2]}</p>
-   <span class="status">NOT CONNECTED</span>
+document.getElementById("conditions").innerHTML = conditionNames.map((item,i)=>`
+  <div class="condition">
+    <div><b>${i+1}. ${item[0]}</b><small>${item[1]}</small></div>
+    <span class="result">UNAVAILABLE</span>
   </div>`).join("");
 
- const timeframes = ["1m","3m","5m","15m","1H","Day","5-Day"];
- document.getElementById("footprintRows").innerHTML = timeframes.map(t => `
-  <tr><td>${t}</td><td>—</td><td>—</td><td>—</td>
-  <td class="yellow">UNAVAILABLE</td><td><span class="status">NOT CONNECTED</span></td></tr>
- `).join("");
-
- document.getElementById("statusRows").innerHTML = requiredData.map(p => `
-  <tr><td>${p[0]}</td><td>${p[1]}</td>
-  <td><span class="status">NOT CONNECTED</span></td><td>—</td></tr>
- `).join("");
-}
-
-function analyze(){
- const input = document.getElementById("symbol");
- const symbol = input.value.trim().toUpperCase();
- if(!/^[A-Z0-9&_-]{1,30}$/.test(symbol)){
-   alert("Enter a valid NSE symbol.");
-   return;
- }
- input.value = symbol;
- document.getElementById("selected").textContent = symbol;
- document.getElementById("finalSignal").textContent = "WAIT";
- document.getElementById("overallStatus").textContent = "DEMO · NOT CONNECTED";
-}
-
-function refreshStatus(){
- document.getElementById("overallStatus").textContent = "DEMO · NOT CONNECTED";
- alert("No market-data backend is connected yet. All parameters remain marked NOT CONNECTED.");
-}
-
-function updateClock(){
- document.getElementById("clock").textContent =
-  "Local time: " + new Date().toLocaleString();
-}
-renderParameters();
-updateClock();
-setInterval(updateClock,1000);
+document.getElementById("search").addEventListener("input", function(){
+  const q = this.value.trim().toUpperCase();
+  document.getElementById("empty").innerHTML =
+    `<strong>${q ? "No live results for " + q : "No qualifying results available"}</strong>
+    Live market data is not connected. No stock signals or scores are fabricated.`;
+});
 </script>
 </body>
 </html>
