@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PRIME FLOW | NSE F&O Scanner</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1017;--panel:#131c27;--line:#283545;--text:#edf3fa;--muted:#91a0b3;--green:#35d49a;--red:#ff6878;--amber:#f3c66b}
@@ -25,7 +25,7 @@ main{padding:0 12px 24px;max-width:1400px;margin:auto}
 input,select,button{width:100%;min-width:0;padding:11px;background:#0c141e;color:var(--text);border:1px solid var(--line);border-radius:7px}
 button{background:#245b4b;color:#dffcf1;font-weight:bold;cursor:pointer}
 button:disabled{background:#29313c;color:#9ba6b4;cursor:not-allowed}
-.layout{display:grid;grid-template-columns:minmax(300px,0.9fr) minmax(0,1.5fr);gap:12px}
+.layout{display:grid;grid-template-columns:minmax(300px,.9fr) minmax(0,1.5fr);gap:12px}
 .panel h2{font-size:15px;margin:0;padding:15px;border-bottom:1px solid var(--line)}
 .panel-body{padding:12px}
 .condition{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;padding:11px 0;border-bottom:1px solid #24303e}
@@ -39,9 +39,10 @@ button:disabled{background:#29313c;color:#9ba6b4;cursor:not-allowed}
 .final-grid small{display:block;color:var(--muted);font-size:10px}
 .final-grid b{display:block;margin-top:5px;font-size:13px}
 .table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:420px}
-th,td{text-align:left;padding:12px 9px;border-bottom:1px solid var(--line);font-size:11px}
+table{width:100%;border-collapse:collapse;min-width:520px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);font-size:11px}
 th{color:var(--muted);font-weight:600}
+.chart-btn{display:inline-block;padding:7px 9px;border:1px solid #287e64;border-radius:6px;color:var(--green);text-decoration:none;font-weight:bold;font-size:10px;white-space:nowrap}
 .empty{text-align:center;padding:30px 15px;color:var(--muted);line-height:1.7}
 .empty strong{display:block;color:var(--text);margin-bottom:8px}
 .foot{color:var(--muted);font-size:10px;padding:16px 2px;line-height:1.6}
@@ -63,9 +64,8 @@ th{color:var(--muted);font-weight:600}
 </header>
 
 <div class="notice">
-  <b>Data connection required.</b> This dashboard is a user interface only.
-  Live market values and scan results are unavailable until a verified market-data
-  feed is connected. No stock signals or scores are fabricated.
+  <b>Data connection required.</b> Live market data is not connected.
+  No stock prices, signals or scores are fabricated.
 </div>
 
 <main>
@@ -81,7 +81,7 @@ th{color:var(--muted);font-weight:600}
     <select aria-label="Direction"><option>Both directions</option><option>Positive</option><option>Negative</option></select>
   </section>
   <div style="margin:-5px 0 14px;color:var(--muted);font-size:11px">
-    Results limit: 25 stocks · Ranked by score when live data is available
+    Results limit: 25 stocks · Ranked by score when live data is connected
   </div>
 
   <div class="layout">
@@ -105,15 +105,16 @@ th{color:var(--muted);font-weight:600}
       <h2>AUTO SCAN RESULTS <span style="float:right;color:var(--muted);font-size:11px">TOP 25</span></h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>RANK</th><th>SYMBOL</th><th>SCORE</th><th>DIRECTION</th><th>RISK</th></tr></thead>
+          <thead>
+            <tr><th>RANK</th><th>SYMBOL</th><th>SCORE</th><th>DIRECTION</th><th>RISK</th><th>CHART</th></tr>
+          </thead>
           <tbody id="results"></tbody>
         </table>
       </div>
       <div class="empty" id="empty">
         <strong>No qualifying results available</strong>
-        Live market data is not connected. The scanner will rank up to
-        25 qualifying stocks after data connection and validation.
-        <br><br>No invented prices, scores or trading recommendations.
+        The live scanner is not connected yet. When real results become available,
+        each stock row will have its own TradingView chart button.
       </div>
       <div class="panel-body">
         <button id="scan" disabled>SCAN UNAVAILABLE — CONNECT DATA FIRST</button>
@@ -123,7 +124,7 @@ th{color:var(--muted);font-weight:600}
 
   <div class="foot">
     PRIME FLOW · Analysis only · Automatic order placement disabled.<br>
-    Signals must pass data-quality checks before they can be displayed.
+    Chart links open TradingView. Scanner signals require validated market data.
   </div>
 </main>
 
@@ -136,18 +137,61 @@ const conditionNames = [
   ["Volume vs 5-day average","Relative trading activity"],
   ["Open interest","Change in futures open interest"],
   ["Buyer / seller footprint","Requires suitable trade-level data"],
-  ["High-volume signal","Volume expansion: 1.5×, 2× and 3× baseline"],
+  ["High-volume signal","1.5×, 2× and 3× baseline thresholds"],
   ["EMA + RSI","Trend and momentum confirmation"],
   ["5-day price + delivery","Price performance and delivery data"],
   ["10-day support / resistance","Nearby support and resistance levels"],
   ["News + impact","Relevant news and potential impact"],
   ["Final conclusion","Combined evidence-based assessment"]
 ];
+
 document.getElementById("conditions").innerHTML = conditionNames.map((item,i)=>`
   <div class="condition">
     <div><b>${i+1}. ${item[0]}</b><small>${item[1]}</small></div>
     <span class="result">UNAVAILABLE</span>
   </div>`).join("");
+
+/* Add a stock row only when actual scanner data is provided.
+   Each row gets a TradingView link for that stock's NSE symbol. */
+function renderResults(stocks) {
+  const results = document.getElementById("results");
+  const empty = document.getElementById("empty");
+  results.replaceChildren();
+
+  stocks.slice(0,25).forEach((stock,index) => {
+    const symbol = String(stock.symbol || "").toUpperCase();
+    if (!/^[A-Z0-9&_-]{1,30}$/.test(symbol)) return;
+
+    const row = document.createElement("tr");
+    const values = [
+      String(index + 1),
+      symbol,
+      stock.score == null ? "—" : String(stock.score),
+      stock.direction || "—",
+      stock.risk || "—"
+    ];
+
+    values.forEach(value => {
+      const cell = document.createElement("td");
+      cell.textContent = value;
+      row.appendChild(cell);
+    });
+
+    const chartCell = document.createElement("td");
+    const link = document.createElement("a");
+    link.className = "chart-btn";
+    link.textContent = "CHART";
+    link.href = "https://www.tradingview.com/chart/?symbol=" +
+      encodeURIComponent("NSE:" + symbol);
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    chartCell.appendChild(link);
+    row.appendChild(chartCell);
+    results.appendChild(row);
+  });
+
+  empty.style.display = results.children.length ? "none" : "block";
+}
 
 document.getElementById("search").addEventListener("input", function(){
   const q = this.value.trim().toUpperCase();
@@ -155,6 +199,9 @@ document.getElementById("search").addEventListener("input", function(){
     `<strong>${q ? "No live results for " + q : "No qualifying results available"}</strong>
     Live market data is not connected. No stock signals or scores are fabricated.`;
 });
+
+/* No live results are loaded until a verified data source is connected. */
+renderResults([]);
 </script>
 </body>
 </html>
