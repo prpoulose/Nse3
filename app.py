@@ -1,9 +1,29 @@
+
 import os
+from datetime import datetime, timezone
 
 import httpx
 from fastapi import FastAPI, HTTPException
 
-app = FastAPI(title="PRIME FLOW", version="0.4.0")
+app = FastAPI(title="PRIME FLOW", version="0.5.0")
+
+ORDER_PLACEMENT = "disabled"
+
+CONDITIONS = [
+    {"id": 1, "name": "Data connection"},
+    {"id": 2, "name": "Global / event risk"},
+    {"id": 3, "name": "India VIX"},
+    {"id": 4, "name": "Today's price"},
+    {"id": 5, "name": "Volume vs 5-day average"},
+    {"id": 6, "name": "Open interest"},
+    {"id": 7, "name": "Buyer / seller footprint"},
+    {"id": 8, "name": "High-volume signal"},
+    {"id": 9, "name": "EMA + RSI"},
+    {"id": 10, "name": "5-day price + delivery"},
+    {"id": 11, "name": "10-day support / resistance"},
+    {"id": 12, "name": "News + impact"},
+    {"id": 13, "name": "Final conclusion"},
+]
 
 
 def dhan_credentials():
@@ -27,9 +47,9 @@ def dhan_credentials():
 def home():
     return {
         "application": "PRIME FLOW",
-        "version": "0.4.0",
+        "version": app.version,
         "status": "running",
-        "trading": "order placement disabled",
+        "trading": ORDER_PLACEMENT,
     }
 
 
@@ -42,10 +62,11 @@ def health():
 def api_status():
     return {
         "application": "PRIME FLOW",
-        "version": "0.4.0",
+        "version": app.version,
         "backend": "running",
-        "order_placement": "disabled",
-        "scanner": "not yet implemented",
+        "scanner": "framework_ready_live_data_not_connected",
+        "conditions": len(CONDITIONS),
+        "order_placement": ORDER_PLACEMENT,
     }
 
 
@@ -58,7 +79,8 @@ def dhan_status():
         "access_token_configured": bool(
             (os.getenv("DHAN_ACCESS_TOKEN") or "").strip()
         ),
-        "connection_test": "not yet tested",
+        "connection_test": "run /api/dhan/test-connection",
+        "order_placement": ORDER_PLACEMENT,
     }
 
 
@@ -77,24 +99,19 @@ def test_dhan_connection():
             return {
                 "status": "connected",
                 "message": "Dhan connection successful.",
-                "order_placement": "disabled",
+                "order_placement": ORDER_PLACEMENT,
             }
 
         raise HTTPException(
             status_code=502,
             detail=(
-                "Dhan returned HTTP "
-                f"{response.status_code}. Check token validity "
-                "and API access in Dhan."
+                f"Dhan returned HTTP {response.status_code}. "
+                "Check token validity and API access in Dhan."
             ),
         )
 
     except httpx.RequestError as exc:
-        # Never log exception text because it may expose sensitive headers.
-        print(
-            f"Dhan request failed: {type(exc).__name__}",
-            flush=True,
-        )
+        print(f"Dhan request failed: {type(exc).__name__}", flush=True)
         raise HTTPException(
             status_code=502,
             detail="Could not reach Dhan. No trade was placed.",
@@ -103,13 +120,31 @@ def test_dhan_connection():
 
 @app.get("/api/scan")
 def scan():
-    raise HTTPException(
-        status_code=503,
-        detail=(
-            "Scanner is not implemented yet. "
-            "No trades have been placed."
+    now = datetime.now(timezone.utc).isoformat()
+
+    return {
+        "application": "PRIME FLOW",
+        "timestamp_utc": now,
+        "status": "LIVE_DATA_UNAVAILABLE",
+        "message": (
+            "Scanner framework is ready, but live scanning has not "
+            "been implemented or verified. No stock signals are generated."
         ),
-    )
+        "conditions": [
+            {
+                **condition,
+                "result": "UNAVAILABLE",
+                "value": None,
+                "reason": "Live data or validated analysis is not connected.",
+            }
+            for condition in CONDITIONS
+        ],
+        "qualified_stocks": 0,
+        "minimum_target": 25,
+        "results": [],
+        "results_are_live": False,
+        "order_placement": ORDER_PLACEMENT,
+    }
 
 
 @app.get("/api/dhan/test-ltp")
@@ -134,18 +169,16 @@ def test_dhan_ltp():
             raise HTTPException(
                 status_code=502,
                 detail=(
-                    "Dhan LTP request failed with HTTP "
+                    f"Dhan LTP request failed with HTTP "
                     f"{response.status_code}. Check market-data API access."
                 ),
             )
 
-        data = response.json()
-
         return {
             "status": "success",
             "message": "Dhan returned an LTP response.",
-            "data": data,
-            "order_placement": "disabled",
+            "data": response.json(),
+            "order_placement": ORDER_PLACEMENT,
         }
 
     except httpx.RequestError as exc:
